@@ -21,6 +21,8 @@ window.addEventListener('message', (ev) => {
         flashAccept(d.id);
     } else if (d.action === 'flashDeny' && d.id) {
         flashDeny(d.id);
+    } else if (d.action === 'prolong' && d.id) {
+        prolongRequest(d.id, d.set);
     }
 });
 
@@ -304,6 +306,35 @@ function flashDeny(id) {
     const el = requests[i].el;
     el.style.boxShadow = '0 0 12px rgba(200,60,60,0.8)';
     setTimeout(() => el.style.boxShadow = '', 400);
+}
+
+function prolongRequest(id, setMs) {
+    const i = findIndexById(id);
+    if (i === -1) return;
+    const rec = requests[i];
+    if (rec.timeoutHandle) cancelAnimationFrame(rec.timeoutHandle);
+    const now = performance.now();
+
+    if (typeof setMs === 'number') {
+        rec.duration = setMs;
+        rec.startedAt = now;
+    } else {
+        rec.startedAt = now;
+    }
+
+    const tick = () => {
+        const now2 = performance.now();
+        const elapsed2 = now2 - rec.startedAt;
+        const pct2 = Math.max(0, Math.min(1, 1 - (elapsed2 / rec.duration)));
+        if (rec.bar) rec.bar.style.width = (pct2 * 100) + '%';
+        if (elapsed2 >= rec.duration) {
+            sendAnswer(id, false);
+            removeRequest(id);
+            return;
+        }
+        rec.timeoutHandle = requestAnimationFrame(tick);
+    };
+    rec.timeoutHandle = requestAnimationFrame(tick);
 }
 
 window.exports = window.exports || {};
