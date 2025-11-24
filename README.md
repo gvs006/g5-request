@@ -14,6 +14,54 @@ Pequeno sistema de "requests" (notificações com opção de aceitar/recusar) pa
 2. Adicione `ensure g5-request` no `server.cfg`.
 3. Tenha `ox_lib` instalado e disponível no servidor.
 
+### Frontend (desenvolvimento local)
+
+O projeto inclui uma versão React/Vite para desenvolvimento em `web/` (NUI em React + Tailwind).
+
+Recomendações rápidas para rodar o painel de desenvolvimento:
+
+```powershell
+cd web
+npm install
+# Instale as dependências do Tailwind (se ainda não estiverem instaladas)
+npm install -D tailwindcss postcss autoprefixer
+# iniciar servidor de desenvolvimento
+npm run start
+```
+
+Observações:
+- Copie os assets (sons, imagens) para `web/public/assets` para que o dev server consiga servir os sons usados pelo painel. Por exemplo:
+
+```powershell
+# do diretório raíz do repo
+mkdir web\public\assets\sound -Force
+robocopy html\assets web\public\assets /E
+```
+
+- O painel de testes (`DevPanel`) aparece automaticamente quando a aplicação detectar que está rodando num navegador (modo dev). Ele permite disparar mensagens que simulam os eventos NUI originais (`add`, `remove`, `flashAccept`, `flashDeny`, `prolong`, `init`).
+
+## Tema / Customização (NUI)
+
+Você pode customizar as cores e tamanhos da UI editando o arquivo Lua `shared/theme.lua`. O cliente envia esse tema para a NUI na inicialização (`SendNUIMessage` com `action = 'init'`) e a aplicação aplica as variáveis como CSS custom properties.
+
+- Onde editar: `shared/theme.lua` — esse arquivo contém valores padrões que suportam transparência.
+- Formatos de cor aceitos: `#rrggbb`, `#rrggbbaa` (hex com alpha), `#rgb` (curto), ou `rgba(r,g,b,a)`.
+- Campos comuns no theme (exemplo):
+	- `card_bg`: cor de fundo do cartão (ex: `rgba(0,0,0,0.8)`)
+	- `title_bg`, `tag_bg`, `tag_fg`, `code_bg`, `code_fg`, `text`, `muted`
+	- `progress_bg`, `progress_color`
+	- `card_width` (ex: `360px`), `card_gap` (ex: `12px`)
+
+Exemplo de uso no NUI/DevPanel:
+- O `DevPanel` tem um editor de tema (JSON) que permite testar alterações em tempo real. Edite JSON e clique em `Apply Theme` para enviar a mensagem `init` com o tema sanitizado.
+- Para alterações permanentes, edite `shared/theme.lua` no servidor e reinicie o recurso.
+
+Recomendações:
+- Prefira usar `rgba()` ou `#rrggbbaa` se precisar de transparência.
+- Valores de tamanho podem ser strings com unidade (`px`, `rem`) — o sanitizador no frontend tentará normalizar entradas.
+
+
+
 ## Estrutura de arquivos 📁
 ```
 g5-request/
