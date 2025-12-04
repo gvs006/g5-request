@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { isEnvBrowser } from "../utils/misc";
-import { sanitizeTheme } from "../utils/themeUtils";
+import { useTheme } from "../contexts/ThemeContext";
 
 const DevPanel: React.FC = () => {
   const [title, setTitle] = useState("Pedido de Ajuda");
@@ -10,8 +10,10 @@ const DevPanel: React.FC = () => {
   const [sound, setSound] = useState("");
   const [id, setId] = useState(1);
   const [position, setPosition] = useState<"top-right" | "top-left">("top-right");
+  const [themeType, setThemeType] = useState<string>("default");
   const [themeInput, setThemeInput] = useState<string>(JSON.stringify({ card_bg: 'rgba(0,0,0,0.8)', progress_color: '#22c55e' }, null, 2));
   const [bgUrl, setBgUrl] = useState<string>('');
+  const { setThemeType: applyThemeType } = useTheme();
 
   if (!isEnvBrowser()) return null;
 
@@ -28,6 +30,7 @@ const DevPanel: React.FC = () => {
       code: code || undefined,
       timeout: Number(timeout) || 8000,
       sound: sound || undefined,
+      themeType: themeType !== "default" ? themeType : undefined,
       extras: [{ icon: "user", name: "Nome", value: "Teste" }],
     };
     sendMessage({ action: "add", request: req });
@@ -53,11 +56,15 @@ const DevPanel: React.FC = () => {
     sendMessage({ action: "init", position, acceptKey: "Y", denyKey: "N" });
   }
 
-  const applyTheme = () => {
+  const changeTheme = () => {
+    applyThemeType(themeType);
+  };
+
+  const applyCustomTheme = () => {
     try {
       const parsed = JSON.parse(themeInput);
-      const cleaned = sanitizeTheme(parsed as any);
-      sendMessage({ action: 'init', theme: cleaned });
+      sendMessage({ action: 'init', themes: { custom: parsed } });
+      setTimeout(() => applyThemeType('custom'), 100);
     } catch (e) {
       // ignore parse errors
       // eslint-disable-next-line no-console
@@ -124,6 +131,17 @@ const DevPanel: React.FC = () => {
             <option value="top-left">Top Left</option>
           </select>
         </div>
+        
+        <div style={{ marginTop: 8 }}>
+          <label style={{ fontSize: 12, color: '#9aa4ad' }}>Theme Type</label>
+          <select style={{ width: '100%', marginTop: 6, padding: 6, borderRadius: 6, background: '#0b1220', color: '#e6eef0', border: '1px solid rgba(255,255,255,0.04)' }} value={themeType} onChange={(e) => setThemeType(e.target.value)}>
+            <option value="default">Default (Verde)</option>
+            <option value="ambulancia">Ambulância (Vermelho)</option>
+            <option value="police">Police (Azul)</option>
+            <option value="bombeiro">Bombeiro (Laranja)</option>
+            <option value="recrutamento">Recrutamento (Roxo)</option>
+          </select>
+        </div>
 
         <div style={{ display: 'flex', gap: 8, paddingTop: 8 }}>
           <button style={{ ...btnStyle, background: '#10b981', color: '#042018', flex: 1 }} onClick={addRequest}>Add</button>
@@ -134,24 +152,15 @@ const DevPanel: React.FC = () => {
           <button style={{ ...btnStyle, background: '#16a34a', color: '#fff', flex: 1 }} onClick={flashAccept}>Flash✓</button>
           <button style={{ ...btnStyle, background: '#374151', color: '#fff', flex: 1 }} onClick={flashDeny}>Flash✕</button>
         </div>
-        <div style={{ paddingTop: 8 }}>
-          <button style={{ ...btnStyle, width: '100%', background: '#334155', color: '#fff' }} onClick={init}>Init</button>
+        <div style={{ display: 'flex', gap: 8, paddingTop: 8 }}>
+          <button style={{ ...btnStyle, width: '100%', background: '#334155', color: '#fff', flex: 1 }} onClick={init}>Init</button>
+          <button style={{ ...btnStyle, width: '100%', background: '#8b5cf6', color: '#fff', flex: 1 }} onClick={changeTheme}>Apply Theme</button>
         </div>
 
-        <div style={{ marginTop: 8 }}>
-          <label style={{ fontSize: 12, color: '#9aa4ad' }}>Background Image URL</label>
-          <input style={{ ...inputStyle, marginTop: 6 }} value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} placeholder="https://... or /local/path.jpg" />
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <textarea value={themeInput} onChange={(e) => setThemeInput(e.target.value)} style={{ width: '100%', height: 96, fontFamily: 'monospace', fontSize: 12, marginTop: 6 }} />
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-          <button style={{ ...btnStyle, background: '#3b82f6', color: '#fff', flex: 1 }} onClick={applyTheme}>Apply Theme</button>
-          <button style={{ ...btnStyle, background: '#059669', color: '#fff', flex: 1 }} onClick={() => {
-            const cleaned = sanitizeTheme({ bg_image: bgUrl } as any);
-            sendMessage({ action: 'init', theme: cleaned });
-          }}>Apply Background</button>
-          <button style={{ ...btnStyle, background: '#334155', color: '#fff', flex: 1 }} onClick={() => sendMessage({ action: 'init', theme: JSON.parse(themeInput) })}>Raw Init</button>
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <label style={{ fontSize: 12, color: '#9aa4ad', fontWeight: 'bold' }}>Custom Theme (JSON)</label>
+          <textarea value={themeInput} onChange={(e) => setThemeInput(e.target.value)} style={{ width: '100%', height: 96, fontFamily: 'monospace', fontSize: 12, marginTop: 6, padding: 6, borderRadius: 6, background: '#0b1220', color: '#e6eef0', border: '1px solid rgba(255,255,255,0.04)' }} placeholder='{"card_bg": "rgba(0,0,0,0.8)", ...}' />
+          <button style={{ ...btnStyle, width: '100%', background: '#3b82f6', color: '#fff', marginTop: 6 }} onClick={applyCustomTheme}>Apply Custom Theme</button>
         </div>
       </div>
     </div>

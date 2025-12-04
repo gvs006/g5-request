@@ -46,7 +46,7 @@ RegisterNetEvent('g5-request:client:add', function(requestData)
         acceptKey = acceptKeybind.currentKey or Config.AcceptKey,
         denyKey = denyKeybind.currentKey or Config.DenyKey,
         position = Config.Position or 'top-right',
-        theme = Theme
+        themes = Themes
     })
     SendNUIMessage({action = 'add', request = requestData})
 end)
@@ -93,7 +93,7 @@ RegisterNUICallback('g5_nui_ready', function(_, cb)
         acceptKey = acceptKeybind.currentKey or Config.AcceptKey,
         denyKey = denyKeybind.currentKey or Config.DenyKey,
         position = Config.Position or 'top-right',
-        theme = Theme
+        themes = Themes
     })
     SendNUIMessage({
         action = 'setVisible',

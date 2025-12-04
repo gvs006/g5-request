@@ -1,12 +1,15 @@
 import React from "react";
 import "./App.css";
 import RequestContainer from "./RequestContainer";
+import { ThemeProvider } from "../contexts/ThemeContext";
 
 const App: React.FC = () => {
   return (
-    <div className="nui-wrapper">
-      <RequestContainer />
-    </div>
+    <ThemeProvider>
+      <div className="nui-wrapper">
+        <RequestContainer />
+      </div>
+    </ThemeProvider>
   );
 };
 

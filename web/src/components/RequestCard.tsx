@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 
 export type RequestData = {
   id: string | number;
   timeout?: number;
+  themeType?: string | null;
   tagColor?: string | null;
   progressColor?: string | null;
   codeColor?: string | null;
@@ -112,11 +114,46 @@ const RequestCard: React.FC<Props> = ({ req, acceptKey, denyKey, onExpire, onRem
   const startedAtRef = useRef<number>(performance.now());
   const durationRef = useRef<number>(req.timeout ?? 8000);
   const rafRef = useRef<number | null>(null);
+  const { themes } = useTheme();
 
   useEffect(() => {
     // initialize styles
     const el = elRef.current;
     if (!el) return;
+    
+    // Aplica o tema específico deste card
+    const themeType = req.themeType || 'default';
+    const cardTheme = themes[themeType] || themes['default'];
+    
+    // Debug logs
+    console.log('[RequestCard] Aplicando tema:', {
+      requestId: req.id,
+      themeType,
+      hasTheme: !!cardTheme,
+      cardBg: cardTheme?.card_bg,
+      availableThemes: Object.keys(themes)
+    });
+    
+    if (cardTheme) {
+      // Aplica todas as propriedades do tema como CSS variables locais neste card
+      if (cardTheme.card_bg) el.style.setProperty("--card-bg", cardTheme.card_bg);
+      if (cardTheme.title_bg) el.style.setProperty("--title-bg", cardTheme.title_bg);
+      if (cardTheme.text) el.style.setProperty("--text", cardTheme.text);
+      if (cardTheme.muted) el.style.setProperty("--muted", cardTheme.muted);
+      if (cardTheme.tag_bg) el.style.setProperty("--tag-bg", cardTheme.tag_bg);
+      if (cardTheme.tag_fg) el.style.setProperty("--tag-fg", cardTheme.tag_fg);
+      if (cardTheme.code_bg) el.style.setProperty("--code-bg", cardTheme.code_bg);
+      if (cardTheme.code_fg) el.style.setProperty("--code-fg", cardTheme.code_fg);
+      if (cardTheme.progress_bg) el.style.setProperty("--progress-bg", cardTheme.progress_bg);
+      if (cardTheme.progress_color) el.style.setProperty("--progress-color", cardTheme.progress_color);
+      if (cardTheme.accent) el.style.setProperty("--accent", cardTheme.accent);
+      
+      console.log('[RequestCard] Tema aplicado com sucesso para request:', req.id);
+    } else {
+      console.warn('[RequestCard] Nenhum tema encontrado para:', themeType);
+    }
+    
+    // Cores personalizadas sobrescrevem o tema
     if (req.tagColor) el.style.setProperty("--tag-bg", req.tagColor);
     if (req.progressColor) el.style.setProperty("--progress-color", req.progressColor);
     if (req.codeColor) el.style.setProperty("--code-bg", req.codeColor);
@@ -193,7 +230,7 @@ const RequestCard: React.FC<Props> = ({ req, acceptKey, denyKey, onExpire, onRem
       audioRefs.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [req, onExpire, onRemove]);
+  }, [req, onExpire, onRemove, themes]);
 
   useEffect(() => {
     if (!elRef.current) return;
@@ -247,12 +284,25 @@ const RequestCard: React.FC<Props> = ({ req, acceptKey, denyKey, onExpire, onRem
     return <div className="mutedline">{_esc(typeof extras === "string" ? extras : JSON.stringify(extras))}</div>;
   }
 
+  // Pega o tema para aplicar inline como fallback
+  const themeType = req.themeType || 'default';
+  const cardTheme = themes[themeType] || themes['default'];
+
   return (
-    <div className="request-card" ref={elRef} data-id={String(req.id)}>
+    <div 
+      className="request-card" 
+      ref={elRef} 
+      data-id={String(req.id)}
+      style={{
+        background: cardTheme?.card_bg || undefined
+      }}
+    >
       <div className="request-progress">
         <div className="bar" ref={barRef} />
       </div>
-      <div className="top-row">
+      <div className="top-row" style={{
+        backgroundColor: cardTheme?.title_bg || undefined
+      }}>
         {req.tagText || req.tag ? <div className="tag">{_esc(req.tagText) || `#${_esc(req.tag || "")}`}</div> : null}
         {req.code ? <div className="code">{_esc(req.code)}</div> : null}
         {req.title ? (

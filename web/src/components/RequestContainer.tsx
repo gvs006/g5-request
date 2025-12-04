@@ -3,7 +3,7 @@ import RequestCard, { RequestData } from "./RequestCard";
 import DevPanel from "./DevPanel";
 import { isEnvBrowser } from "../utils/misc";
 import { fetchNui } from "../utils/fetchNui";
-import { sanitizeTheme } from "../utils/themeUtils";
+import { useTheme } from "../contexts/ThemeContext";
 
 type RecordItem = {
   id: string;
@@ -30,48 +30,13 @@ const RequestContainer: React.FC = () => {
       const d = ev.data;
       if (!d || !d.action) return;
       if (d.action === "init") {
-        if (d.theme && typeof d.theme === 'object') {
-          // apply theme variables to document root so CSS picks them up
-          try {
-            const t = d.theme as { [k: string]: unknown };
-            const cleaned = sanitizeTheme(t as any);
-            const map: Record<string, string> = {
-              card_bg: '--card-bg',
-              title_bg: '--title-bg',
-              tag_bg: '--tag-bg',
-              tag_fg: '--tag-fg',
-              code_bg: '--code-bg',
-              code_fg: '--code-fg',
-              text: '--text',
-              muted: '--muted',
-              progress_bg: '--progress-bg',
-              progress_color: '--progress-color',
-              bg_image: '--bg-image',
-              bg_size: '--bg-size',
-              bg_position: '--bg-position',
-              card_width: '--card-width',
-              card_gap: '--card-gap',
-            };
-            for (const [k, v] of Object.entries(map)) {
-              if ((cleaned as any)[k] !== undefined && document && document.documentElement) {
-                if (k === 'bg_image') {
-                  const url = String((cleaned as any)[k]);
-                  const cssVal = url ? `url('${url.replace(/'/g, "\\'")}')` : 'none';
-                  document.documentElement.style.setProperty(v, cssVal);
-                } else {
-                  document.documentElement.style.setProperty(v, String((cleaned as any)[k]));
-                }
-              }
-            }
-          } catch (e) {
-            // ignore
-          }
-        }
         if (d.acceptKey) acceptKeyRef.current = d.acceptKey;
         if (d.denyKey) denyKeyRef.current = d.denyKey;
         if (d.position) setPosition(d.position === "top-left" ? "top-left" : "top-right");
+        // Os temas agora são gerenciados pelo ThemeContext via evento separado
       } else if (d.action === "add" && d.request) {
         addRequest(d.request);
+        // Cada card aplica seu próprio tema individualmente, não globalmente
       } else if (d.action === "remove" && d.id) {
         removeRequest(String(d.id));
       } else if (d.action === "flashAccept" && d.id) {

@@ -42,23 +42,98 @@ robocopy html\assets web\public\assets /E
 
 ## Tema / Customização (NUI)
 
-Você pode customizar as cores e tamanhos da UI editando o arquivo Lua `shared/theme.lua`. O cliente envia esse tema para a NUI na inicialização (`SendNUIMessage` com `action = 'init'`) e a aplicação aplica as variáveis como CSS custom properties.
+O sistema agora suporta **múltiplos temas** por tipo de request! Você pode definir temas diferentes para ambulância, polícia, bombeiro, recrutamento, etc. e o sistema aplica automaticamente baseado no tipo do request.
 
-- Onde editar: `shared/theme.lua` — esse arquivo contém valores padrões que suportam transparência.
-- Formatos de cor aceitos: `#rrggbb`, `#rrggbbaa` (hex com alpha), `#rgb` (curto), ou `rgba(r,g,b,a)`.
-- Campos comuns no theme (exemplo):
-	- `card_bg`: cor de fundo do cartão (ex: `rgba(0,0,0,0.8)`)
-	- `title_bg`, `tag_bg`, `tag_fg`, `code_bg`, `code_fg`, `text`, `muted`
-	- `progress_bg`, `progress_color`
-	- `card_width` (ex: `360px`), `card_gap` (ex: `12px`)
+### Configuração de temas
 
-Exemplo de uso no NUI/DevPanel:
-- O `DevPanel` tem um editor de tema (JSON) que permite testar alterações em tempo real. Edite JSON e clique em `Apply Theme` para enviar a mensagem `init` com o tema sanitizado.
-- Para alterações permanentes, edite `shared/theme.lua` no servidor e reinicie o recurso.
+Os temas são definidos no arquivo `shared/theme.lua` como uma tabela indexada por tipo:
+
+```lua
+Themes = {
+    ['default'] = {
+        card_bg = 'rgba(6,8,10,0.78)',
+        title_bg = 'rgba(0,0,0,0.55)',
+        text = '#F4F7F8',
+        muted = '#AAB7B9',
+        tag_bg = 'rgba(34,197,94,0.14)',
+        tag_fg = '#042712',
+        progress_color = '#16A34A',
+        accent = '#22C55E',
+        -- ...
+    },
+    ['bombeiro'] = {
+        card_bg = 'rgba(10,6,6,0.78)',
+        tag_bg = 'rgba(249,115,22,0.14)',
+        tag_fg = '#7c2d12',
+        progress_color = '#ea580c',
+        accent = '#f97316',
+        -- ...
+    },
+    ['ambulancia'] = {
+        -- tema vermelho para ambulância
+    },
+    ['police'] = {
+        -- tema azul para polícia
+    },
+    -- ... adicione mais temas conforme necessário
+}
+```
+
+### Temas padrão incluídos
+
+O sistema já vem com 5 temas pré-configurados:
+- **default**: Verde (tema padrão)
+- **ambulancia**: Vermelho (para serviços médicos)
+- **police**: Azul (para polícia)
+- **bombeiro**: Laranja (para bombeiros)
+- **recrutamento**: Roxo (para processos de recrutamento)
+
+### Usando temas em requests
+
+Para aplicar um tema específico a um request, adicione o campo `themeType`:
+
+```lua
+local request = {
+    title = 'Chamado Médico',
+    tag = 'AMBULANCIA',
+    code = 'A1',
+    themeType = 'ambulancia', -- aplica o tema de ambulância
+    extras = {
+        { icon = 'heart', name = 'Urgência', value = 'Alta' }
+    },
+    timeout = 15000
+}
+TriggerEvent('g5-request:server:send', targetId, request)
+```
+
+Se `themeType` não for especificado, o tema `default` será usado.
+
+### Campos de tema disponíveis
+
+- **Cores de fundo**: `card_bg`, `title_bg`, `progress_bg`
+- **Cores de texto**: `text`, `muted`, `tag_fg`, `code_fg`
+- **Cores de destaque**: `tag_bg`, `code_bg`, `progress_color`, `accent`
+- **Tamanhos**: `card_width` (ex: `360px`), `card_gap` (ex: `12px`)
+- **Imagem de fundo** (opcional): `bg_image`, `bg_size`, `bg_position`
+
+### Formatos de cor aceitos
+
+- `#rrggbb` ou `#rgb` (hex)
+- `#rrggbbaa` (hex com alpha/transparência)
+- `rgba(r,g,b,a)` (função CSS)
+
+### Arquitetura do sistema de temas
+
+O sistema utiliza React Context para gerenciar temas:
+- **ThemeContext** (`web/src/contexts/ThemeContext.tsx`): Gerencia os temas e aplica CSS variables
+- **ThemeProvider**: Envolve a aplicação e fornece acesso aos temas
+- Os temas são enviados do servidor via NUI message (`action: 'init'`)
+- Cada request pode especificar seu `themeType` para trocar de tema dinamicamente
 
 Recomendações:
-- Prefira usar `rgba()` ou `#rrggbbaa` se precisar de transparência.
-- Valores de tamanho podem ser strings com unidade (`px`, `rem`) — o sanitizador no frontend tentará normalizar entradas.
+- Prefira usar `rgba()` ou `#rrggbbaa` se precisar de transparência
+- Mantenha consistência nas cores de cada tipo de serviço
+- Teste os temas em diferentes condições de iluminação do jogo
 
 
 
@@ -225,6 +300,7 @@ Formato de retorno de getGroupStatus:
 Para testar o envio de requests, utilize os seguintes comandos (implementados no servidor):
  - `/sendtestrequest <target>` — envia um request de teste para `target` (server id).
  - `/sendgrouptest <id1,id2,...>` — envia para múltiplos alvos e aguarda respostas (usa export internamente).
+ - `/testthemes <target>` — envia 5 requests sequenciais testando todos os temas predefinidos (ambulancia, police, bombeiro, recrutamento, default).
 
 ## NUI / comportamento do cliente
  - A NUI recebe a tecla atual de aceitar/recusar (vinda do keybind registrado no cliente) ao inicializar via `init` message.
